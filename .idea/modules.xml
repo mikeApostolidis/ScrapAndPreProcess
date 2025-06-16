@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/ScrappingBot.iml" filepath="$PROJECT_DIR$/.idea/ScrappingBot.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ScrapAndPreProcess.iml" filepath="$PROJECT_DIR$/.idea/ScrapAndPreProcess.iml" />
     </modules>
   </component>
 </project>

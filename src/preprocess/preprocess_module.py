@@ -17,7 +17,7 @@ def remove_all_files(path, zip_path, outputDir):
                 os.remove(file_path)
             except Exception as e:
                 print(
-                    f"An error occurred during deleting all csv files on method  test_remove_all_files : {e},{filename}")
+                    f"An error occurred during deleting all csv files on method remove_all_files : {e},{filename}")
     for filename in os.listdir(zip_path):
         if filename.endswith(".rar") or filename.endswith(".xlsx"):
             # Construct the full path of the file
@@ -27,7 +27,7 @@ def remove_all_files(path, zip_path, outputDir):
                 os.remove(file_path)
             except Exception as e:
                 print(
-                    f"An error occurred during deleting all csv files on method  test_remove_all_files : {e},{filename}")
+                    f"An error occurred during deleting all csv files on method  remove_all_files : {e},{filename}")
     # Deletes CSV files from
     for filename in os.listdir(outputDir):
         if filename.endswith(".csv"):
@@ -38,7 +38,7 @@ def remove_all_files(path, zip_path, outputDir):
                 os.remove(file_path)
             except Exception as e:
                 print(
-                    f"An error occurred during deleting all csv files on method  test_remove_all_files : {e},{filename}")
+                    f"An error occurred during deleting all csv files on method  remove_all_files : {e},{filename}")
 
 
 def remove_empty_spaces_before_after_commas(folder_path):
@@ -52,11 +52,11 @@ def remove_empty_spaces_before_after_commas(folder_path):
                 df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
             except Exception as e:
                 print(
-                    f"An error occurred during preprocessing on method  test_remove_empty_spaces_before_after_commas : {e},{filename}")
+                    f"An error occurred during preprocessing on method  remove_empty_spaces_before_after_commas : {e},{filename}")
 
             output_path = os.path.join(folder_path, filename)
 
-            df.to_csv(output_path, index=False, encoding='utf-8')
+            df.to_csv(output_path, index=False, encoding='utf-8', na_rep='NULL')
 
 
 def check_if_column_exists(df, column_name, default_value):
@@ -163,7 +163,6 @@ def normalize_type(folder_path):
             }
 
             try:
-
                 df['ΤΥΠΟΣ'] = df['ΤΥΠΟΣ'].replace(type_mapping)
 
                 df['ΤΥΠΟΣ'] = df['ΤΥΠΟΣ'].apply(lambda x: x if x in ['ΓΕΝΙΚΗΣ', 'ΜΟΥΣΙΚΟ'] else 'ΕΙΔΙΚΗΣ')
@@ -225,16 +224,24 @@ def check_moria_pinaka(folder_path):
 
             df = pd.read_csv(input_path, encoding='utf-8')
             try:
-                check_if_column_exists(df, 'ΜΟΡΙΑ ΠΙΝΑΚΑ', None)
+                check_if_column_exists(df, 'ΜΟΡΙΑ ΠΙΝΑΚΑ', np.nan)
+
             except Exception as e:
                 print(f"An error occurred during preprocessing on method check_moria_pinaka : {e},{filename}")
 
             output_path = os.path.join(folder_path, filename)
 
-            df.to_csv(output_path, index=False, encoding='utf-8')
+            df.to_csv(output_path, index=False, encoding='utf-8', na_rep='NULL')
 
 
-def check_and_fix_eponymo(folder_path):
+def fix_onoma(value):
+    value = str(value).strip()
+    value = re.sub(r'\s*-\s*', '-', value)  # cleans - with spaces surrounding it
+    value = re.sub(r'\s+', '-', value)  # spaces to -
+    return value
+
+
+def check_and_fix_double_onoma_epwnymo(folder_path):
     for filename in os.listdir(folder_path):
         if filename.endswith(".csv"):
             input_path = os.path.join(folder_path, filename)
@@ -242,18 +249,26 @@ def check_and_fix_eponymo(folder_path):
             try:
                 df = pd.read_csv(input_path, encoding='utf-8')
 
-                if 'ΕΠΩΝΥΜΟ' or 'ΕΠΙΘΕΤΟ' in df.columns:
+                possible_names = ['ΟΝΟΜΑ', 'Ονομα', 'Όνομα', 'όνομα']
+                onoma_column = next((col for col in df.columns if col.strip() in possible_names), None)
 
-                    df['ΕΠΩΝΥΜΟ'] = df['ΕΠΩΝΥΜΟ'].astype(str).apply(
-                        lambda x: x if x.count(' ') == 0 else x.replace(' ', '-', 1) if x.count(' ') == 2 else x
-                    )
+                if onoma_column:
+                    df[onoma_column] = df[onoma_column].apply(fix_onoma)
                 else:
-                    print(f"Column 'ΕΠΩΝΥΜΟ' not found in file {filename}")
+                    print(f"Column called ΟΝΟΜΑ was not found in file {filename}")
+
+                possible_surnames = ['ΕΠΩΝΥΜΟ', 'Επώνυμο', 'επωνυμο', 'ΕΠΙΘΕΤΟ', 'Επίθετο']
+                epitheto_column = next((col for col in df.columns if col.strip() in possible_surnames), None)
+
+                if epitheto_column:
+                    df[epitheto_column] = df[epitheto_column].apply(fix_onoma)
+                else:
+                    print(f"Column called ΕΠΩΝΥΜΟ was not found in file {filename}")
 
                 df.to_csv(input_path, index=False, encoding='utf-8')
 
             except Exception as e:
-                print(f"An error occurred in file {filename}: {e}")
+                print(f"Error in {filename}: {e}")
 
 
 def normalize_perioxi_topothetisis(folder_path):
@@ -287,20 +302,20 @@ def normalize_perioxi_topothetisis(folder_path):
                 df['ΠΕΡΙΟΧΗ ΤΟΠΟΘΕΤΗΣΗΣ'] = df['ΠΕΡΙΟΧΗ ΤΟΠΟΘΕΤΗΣΗΣ'].str.replace('Β-', '')
             except Exception as e:
                 print(
-                    f"An error occurred during preprocessing on method test_normalize_perioxi_topothetisis(1) : {e},{filename}")
+                    f"An error occurred during preprocessing on method normalize_perioxi_topothetisis(1) : {e},{filename}")
             try:
                 # Remove the character "΄" from every row in the 'ΠΕΡΙΟΧΗ ΤΟΠΟΘΕΤΗΣΗΣ' column
                 df['ΠΕΡΙΟΧΗ ΤΟΠΟΘΕΤΗΣΗΣ'] = df['ΠΕΡΙΟΧΗ ΤΟΠΟΘΕΤΗΣΗΣ'].str.replace('΄', '')
             except Exception as e:
                 print(
-                    f"An error occurred during preprocessing on method test_normalize_perioxi_topothetisis(1) : {e},{filename}")
+                    f"An error occurred during preprocessing on method normalize_perioxi_topothetisis(1) : {e},{filename}")
 
             try:
                 # Remove the character "(Π.Ε.)" from every row in the 'ΠΕΡΙΟΧΗ ΤΟΠΟΘΕΤΗΣΗΣ' column
                 df['ΠΕΡΙΟΧΗ ΤΟΠΟΘΕΤΗΣΗΣ'] = df['ΠΕΡΙΟΧΗ ΤΟΠΟΘΕΤΗΣΗΣ'].str.replace('(Π.Ε.)', '')
             except Exception as e:
                 print(
-                    f"An error occurred during preprocessing on method test_normalize_perioxi_topothetisis(2) : {e},{filename}")
+                    f"An error occurred during preprocessing on method normalize_perioxi_topothetisis(2) : {e},{filename}")
 
             try:
                 # Remove the character "(Δ.Ε.)" from every row in the 'ΠΕΡΙΟΧΗ ΤΟΠΟΘΕΤΗΣΗΣ' column
@@ -308,7 +323,7 @@ def normalize_perioxi_topothetisis(folder_path):
                 df['ΠΕΡΙΟΧΗ ΤΟΠΟΘΕΤΗΣΗΣ'] = df['ΠΕΡΙΟΧΗ ΤΟΠΟΘΕΤΗΣΗΣ'].str.replace('(Δ.Ε)', '')
             except Exception as e:
                 print(
-                    f"An error occurred during preprocessing on method test_normalize_perioxi_topothetisis(3) : {e},{filename}")
+                    f"An error occurred during preprocessing on method normalize_perioxi_topothetisis(3) : {e},{filename}")
 
             try:
                 # Remove the character "(Δ.Ε.)" from every row in the 'ΠΕΡΙΟΧΗ ΤΟΠΟΘΕΤΗΣΗΣ' column
@@ -322,7 +337,7 @@ def normalize_perioxi_topothetisis(folder_path):
                 df['ΠΕΡΙΟΧΗ ΤΟΠΟΘΕΤΗΣΗΣ'] = df['ΠΕΡΙΟΧΗ ΤΟΠΟΘΕΤΗΣΗΣ'].str.replace('  ', ' ')
             except Exception as e:
                 print(
-                    f"An error occurred during preprocessing on method test_normalize_perioxi_topothetisis(4) : {e},{filename}")
+                    f"An error occurred during preprocessing on method normalize_perioxi_topothetisis(4) : {e},{filename}")
 
             replacement_mapping = {
 
@@ -1007,8 +1022,6 @@ def normalize_perioxi_topothetisis(folder_path):
                 "ΚΑΛΛΙΤΕΧΝΙΚΟ ΓΥΜΝΑΣΙΟ Λ.Τ. ΑΜΠΕΛΟΚΗΠΩΝ ΘΕΣΣΑΛΟΝΙΚΗΣ": "Καλλιτεχνικό Γυμνάσιο Λ.τ. Αμπελοκήπων Θεσσαλονίκης",
                 "ΚΑΛΛΙΤΕΧΝΙΚΟ ΣΧΟΛΕΙΟ Κοζάνης": "Καλλιτεχνικό Σχολείο Κοζάνης"
 
-
-
             }
 
             try:
@@ -1066,7 +1079,7 @@ def normalize_perioxi_topothetisis(folder_path):
                 df['ΠΕΡΙΟΧΗ ΤΟΠΟΘΕΤΗΣΗΣ'] = df['ΠΕΡΙΟΧΗ ΤΟΠΟΘΕΤΗΣΗΣ'].str.replace('Β ΑΝΑΤ. ΑΤΤΙΚΗΣ', 'Β Ανατ. Αττικής')
             except Exception as e:
                 print(
-                    f"An error occurred during preprocessing on method test_normalize_perioxi_topothetisis(5) : {e},{filename}")
+                    f"An error occurred during preprocessing on method normalize_perioxi_topothetisis(5) : {e},{filename}")
 
             # Construct the full path of the output CSV file
             output_path = os.path.join(folder_path, filename)
@@ -1228,30 +1241,34 @@ def dieth_ekps(folder_path):
             df = pd.read_csv(input_path, encoding='utf-8')
 
             #  Check and add 'Δ/ΝΣΗ ΕΚΠ/ΣΗΣ' column if it doesn't exist
+
             check_if_column_exists(df, 'Δ/ΝΣΗ ΕΚΠ/ΣΗΣ', '-')
+
             try:
+                df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'] = df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'].astype(object)
                 df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'].fillna('-', inplace=True)
+
             except Exception as e:
                 print(
-                    f"An error occurred during preprocessing on method test_dieth_ekps  (replace nan to -): {e},{filename}")
+                    f"An error occurred during preprocessing on method dieth_ekps  (replace nan to -): {e},{filename}")
             try:
                 df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'] = df['Δ/ΝΣΗ Α/ΘΜΙΑΣ ΕΚΠ/ΣΗΣ']
                 df = df.drop(['Δ/ΝΣΗ Α/ΘΜΙΑΣ ΕΚΠ/ΣΗΣ'], axis=1)
             except Exception as e:
                 print(
-                    f"An error occurred during preprocessing on method test_dieth_ekps (replace Α/ΝΣΗ Α/ΘΜΙΑΣ ΕΚΠ/ΣΗΣ): {e},{filename}")
+                    f"An error occurred during preprocessing on method dieth_ekps (replace Α/ΝΣΗ Α/ΘΜΙΑΣ ΕΚΠ/ΣΗΣ): {e},{filename}")
             try:
                 df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'] = df['Δ/ΝΣΗ Π/ΘΜΙΑΣ ΕΚΠ/ΣΗΣ']
                 df = df.drop(['Δ/ΝΣΗ Π/ΘΜΙΑΣ ΕΚΠ/ΣΗΣ'], axis=1)
             except Exception as e:
                 print(
-                    f"An error occurred during preprocessing on method test_dieth_ekps  (replace Δ/ΝΣΗ Π/ΘΜΙΑΣ ΕΚΠ/ΣΗΣ): {e},{filename}")
+                    f"An error occurred during preprocessing on method dieth_ekps  (replace Δ/ΝΣΗ Π/ΘΜΙΑΣ ΕΚΠ/ΣΗΣ): {e},{filename}")
             try:
                 df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'] = df['Δ/ΝΣΗ ΠΡΩΤΟΒΑΘΜΙΑΣ ΕΚΠ/ΣΗΣ']
                 df = df.drop(['Δ/ΝΣΗ ΠΡΩΤΟΒΑΘΜΙΑΣ ΕΚΠ/ΣΗΣ'], axis=1)
             except Exception as e:
                 print(
-                    f"An error occurred during preprocessing on method test_dieth_ekps (replace Δ/ΝΣΗ ΠΡΩΤΟΒΑΘΜΙΑΣ ΕΚΠ/ΣΗΣ): {e},{filename}")
+                    f"An error occurred during preprocessing on method dieth_ekps (replace Δ/ΝΣΗ ΠΡΩΤΟΒΑΘΜΙΑΣ ΕΚΠ/ΣΗΣ): {e},{filename}")
 
             try:
                 # Replace the entire value with '-' whenever 'ΠΔΕ' is found in the string
@@ -1263,7 +1280,7 @@ def dieth_ekps(folder_path):
                 df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'] = df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'].str.replace('ΔΙΕΥΘΥΝΣΗ', '')
             except Exception as e:
                 print(
-                    f"An error occurred during preprocessing on method test_dieth_ekps (replace ΔΙΕΥΘΥΝΣΗ): {e},{filename}")
+                    f"An error occurred during preprocessing on method dieth_ekps (replace ΔΙΕΥΘΥΝΣΗ): {e},{filename}")
 
             try:
                 df['Suffix'] = ''  # Initialize 'Suffix' before the loop
@@ -1279,13 +1296,13 @@ def dieth_ekps(folder_path):
                         ).strip()
             except Exception as e:
                 print(
-                    f"An error occurred during preprocessing on method test_dieth_ekps (replace suffix): {e},{filename}")
+                    f"An error occurred during preprocessing on method dieth_ekps (replace suffix): {e},{filename}")
 
             try:
                 # Remove the character "΄" from every row in the 'Δ/ΝΣΗ ΕΚΠ/ΣΗΣ' column
                 df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'] = df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'].str.replace('΄', '')
             except Exception as e:
-                print(f"An error occurred during preprocessing on method test_dieth_ekps (replace ΄): {e},{filename}")
+                print(f"An error occurred during preprocessing on method dieth_ekps (replace ΄): {e},{filename}")
 
             # Find rows containing the word 'ΠΕΡΙΦΕΡΕΙΑΚΗ' in the column 'Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'
 
@@ -1308,7 +1325,7 @@ def dieth_ekps(folder_path):
 
                 # print(df['Prefix'])
             except Exception as e:
-                print(f"An error occurred during preprocessing on method test_dieth_ekps(prefix) : {e},{filename}")
+                print(f"An error occurred during preprocessing on method dieth_ekps(prefix) : {e},{filename}")
 
             try:
                 # reconstruct the column
@@ -1321,20 +1338,20 @@ def dieth_ekps(folder_path):
                 # Remove the character "." from every row in the 'Δ/ΝΣΗ ΕΚΠ/ΣΗΣ' column
                 df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'] = df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'].str.replace('.', '')
             except Exception as e:
-                print(f"An error occurred during preprocessing on method test_dieth_ekps (replace .): {e},{filename}")
+                print(f"An error occurred during preprocessing on method dieth_ekps (replace .): {e},{filename}")
 
             try:
                 # Remove the character "." from every row in the 'Δ/ΝΣΗ ΕΚΠ/ΣΗΣ' column
                 df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'] = df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'].str.replace('  ', ' ')
             except Exception as e:
                 print(
-                    f"An error occurred during preprocessing on method test_dieth_ekps (replace spaces): {e},{filename}")
+                    f"An error occurred during preprocessing on method dieth_ekps (replace spaces): {e},{filename}")
 
             try:
                 # Remove the character "." from every row in the 'Δ/ΝΣΗ ΕΚΠ/ΣΗΣ' column
                 df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'] = df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'].str.replace('()', '')
             except Exception as e:
-                print(f"An error occurred during preprocessing on method test_dieth_ekps  (replace ()): {e},{filename}")
+                print(f"An error occurred during preprocessing on method dieth_ekps  (replace ()): {e},{filename}")
 
             result = check_csv_title(filename)
             # print(filename,"<- filename, result->", result)
@@ -1521,13 +1538,13 @@ def dieth_ekps(folder_path):
                 # df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'] = df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'].str.replace('ΔΕ _', '-')
             except Exception as e:
                 print(
-                    f"An error occurred during preprocessing on method test_dieth_ekps(replace ΠΕΡΙΦΕΡΕΙΑΚΗ names) : {e},{filename}")
+                    f"An error occurred during preprocessing on method dieth_ekps(replace ΠΕΡΙΦΕΡΕΙΑΚΗ names) : {e},{filename}")
             try:
                 # Remove the character "space" from every row in the 'Δ/ΝΣΗ ΕΚΠ/ΣΗΣ' column
                 df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'] = df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'].str.replace('  ', ' ')
             except Exception as e:
                 print(
-                    f"An error occurred during preprocessing on method test_dieth_ekps (replace space 2): {e},{filename}")
+                    f"An error occurred during preprocessing on method dieth_ekps (replace space 2): {e},{filename}")
             try:
                 df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'] = df.apply(check_and_update, axis=1)
                 df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'] = df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'].str.replace('ΔΕ  -', '-')
@@ -1541,7 +1558,7 @@ def dieth_ekps(folder_path):
                 df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'] = df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'].str.replace('ΣΜΕΑΕ', '-')
             except Exception as e:
                 print(
-                    f"An error occurred during preprocessing on method test_dieth_ekps (replace space 2): {e},{filename}")
+                    f"An error occurred during preprocessing on method dieth_ekps (replace space 2): {e},{filename}")
 
                 df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'] = df['Δ/ΝΣΗ ΕΚΠ/ΣΗΣ'].fillna('-')
 
@@ -1550,7 +1567,7 @@ def dieth_ekps(folder_path):
 
             output_path = os.path.join(folder_path, filename)
 
-            df.to_csv(output_path, index=False, encoding='utf-8')
+            df.to_csv(output_path, index=False, encoding='utf-8', na_rep='NULL')
 
 
 def check_and_update(row):
@@ -1622,7 +1639,7 @@ def delete_periferia(folder_path):
 
             output_path = os.path.join(folder_path, filename)
 
-            df.to_csv(output_path, index=False, encoding='utf-8')
+            df.to_csv(output_path, index=False, encoding='utf-8', na_rep='NULL')
 
 
 def create_sxolia(folder_path):
@@ -1684,7 +1701,7 @@ def create_sxolia(folder_path):
             output_path = os.path.join(folder_path, filename)
 
             # Save the modified DataFrame back to a new CSV file
-            df.to_csv(output_path, index=False, encoding='utf-8')
+            df.to_csv(output_path, index=False, encoding='utf-8', na_rep='NULL')
 
 
 def add_mousika_organa_to_sxolia(folder_path):
@@ -1705,7 +1722,7 @@ def add_mousika_organa_to_sxolia(folder_path):
 
             output_path = os.path.join(folder_path, filename)
 
-            df.to_csv(output_path, index=False, encoding='utf-8')
+            df.to_csv(output_path, index=False, encoding='utf-8', na_rep='NULL')
 
 
 def add_hmeromhnia(folder_path):
@@ -1721,12 +1738,14 @@ def add_hmeromhnia(folder_path):
                     df = pd.read_csv(input_path, encoding='utf-8')
 
                     df['ΗΜΕΡΟΜΗΝΙΑ'] = date_from_filename
+
+                    output_path = os.path.join(folder_path, filename)
+
+                    df.to_csv(output_path, index=False, encoding='utf-8', na_rep='NULL')
             except Exception as e:
-                print(f"An error occurred during preprocessing on method test_add_hmeromhnia : {e},{filename}")
+                print(f"An error occurred during preprocessing on method add_hmeromhnia : {e},{filename}")
 
-            output_path = os.path.join(folder_path, filename)
 
-            df.to_csv(output_path, index=False, encoding='utf-8')
 
 
 def create_sxoliko_etos(folder_path):
@@ -1762,7 +1781,7 @@ def create_sxoliko_etos(folder_path):
 
                 output_path = os.path.join(folder_path, filename)
 
-                df.to_csv(output_path, index=False, encoding='utf-8')
+                df.to_csv(output_path, index=False, encoding='utf-8', na_rep='NULL')
 
 
 def add_orario_values(folder_path):
@@ -1777,7 +1796,7 @@ def add_orario_values(folder_path):
 
             output_path = os.path.join(folder_path, filename)
 
-            df.to_csv(output_path, index=False, encoding='utf-8')
+            df.to_csv(output_path, index=False, encoding='utf-8', na_rep='NULL')
 
 
 def normalize_klados(folder_path):
@@ -1867,11 +1886,11 @@ def normalize_all_columns_names(folder_path):
 
             except Exception as e:
 
-                print(f"An error occurred during preprocessing on method test_normalize_all_columns : {e},{filename}")
+                print(f"An error occurred during preprocessing on method normalize_all_columns : {e},{filename}")
 
             output_path = os.path.join(folder_path, filename)
 
-            df.to_csv(output_path, index=False, encoding='utf-8')
+            df.to_csv(output_path, index=False, encoding='utf-8', na_rep='NULL')
 
 
 def re_order(folder_path):
@@ -1896,7 +1915,7 @@ def re_order(folder_path):
 
                 output_path = os.path.join(folder_path, filename)
 
-                df.to_csv(output_path, index=False, encoding='utf-8')
+                df.to_csv(output_path, index=False, encoding='utf-8', na_rep='NULL')
     except Exception as e:
         print(f"An error occurred during preprocessing on method re_order : {e}")
 
@@ -1913,7 +1932,7 @@ def remove_rows_with_empty_names(folder_path):
 
                 df = df[~condition]
 
-                df.to_csv(input_path, index=False, encoding='utf-8')
+                df.to_csv(input_path, index=False, encoding='utf-8', na_rep='NULL')
 
     except Exception as e:
         print(f"An error occurred during preprocessing on method remove_rows_with_empty_names : {e}")
@@ -2029,6 +2048,8 @@ def remove_inferior_duplicates(csv_path):
             cleaned_df[col] = ''
 
     cleaned_df = cleaned_df[ordered_columns]
+    if 'Moria_Pinaka' in cleaned_df.columns:
+        cleaned_df['Moria_Pinaka'] = cleaned_df['Moria_Pinaka'].replace('', 'NULL')
     current_date = date.today().strftime("%Y-%m-%d")
     random_number = random.randint(10000, 99999)
     cleaned_filename = f"cleaned_output-{current_date}-{random_number}.csv"

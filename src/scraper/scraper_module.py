@@ -8,13 +8,16 @@ from selenium.webdriver import Keys
 from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
-from ScrapAndPreProcess.src.driver.driver_module import driver_init
+
 from unidecode import unidecode
 import re
 from datetime import datetime
-import ScrapAndPreProcess.src.settings as settings
-import patoolib
+
 from urllib.parse import unquote
+
+from src import settings
+from src.driver.driver_module import driver_init
+import patoolib
 
 
 def normalize_greek_text(text):
@@ -156,8 +159,6 @@ def get_last_downloaded_fileRAR(download_path):
 
 def scrap(date_to_compare):
     zip_folder_process = settings.zip_folder_path
-    # date_to_compare = '2023-12-28'
-    print(date_to_compare)
 
     download_path = settings.download_folder_path
     global date_for_preprocess, orario_value
@@ -171,8 +172,6 @@ def scrap(date_to_compare):
     driver.get("https://www.minedu.gov.gr/")
 
     driver.find_element("xpath", '//*[@id="zentools-1085"]/ul/li/ul/li[6]/a').click()
-
-    # driver.get("https://www.minedu.gov.gr/news?start=1500")
 
     while True:
         current_url = driver.current_url
@@ -201,12 +200,12 @@ def scrap(date_to_compare):
                     date_for_preprocess = locate_date_from_string_and_normalize_it(a_tag_text)
                     print("normalized date:", date_for_preprocess)
                     obj_date = datetime.strptime(date_for_preprocess, '%Y-%m-%d').date()
-                    print("date object: ", obj_date)
+                    # print("date object: ", obj_date)
 
                     if obj_date == date_to_compare:
                         # print("mpika stin if")
                         break
-                    print("den mpika stin if")
+                    # print("den mpika stin if")
 
                     a_tag.send_keys(Keys.CONTROL + Keys.RETURN)
                     time.sleep(1)
@@ -233,12 +232,12 @@ def scrap(date_to_compare):
                         # Check if the keyword is present in the normalized text
                         if "plerous orariou" in normalized_page_text:
                             orario_value = "ΑΠΩ"
-                            print("Keyword found on the page!", orario_value)
+                            # print("Keyword found on the page!", orario_value)
                         elif "meiomenou orariou" in normalized_page_text:
                             orario_value = "ΑΜΩ"
-                            print("Keyword found on the page!", orario_value)
-                        else:
-                            print("Keyword not found on the page.")
+                            # print("Keyword found on the page!", orario_value)
+                        # else:
+                        #     print("Keyword not found on the page.")
                         try:
                             # Combine both XPaths using the OR operator (|) to select elements that match either condition
                             combined_xpath = "//a[contains(@href, '.rar') or contains(@href, '.xlsx')]"
@@ -266,12 +265,14 @@ def scrap(date_to_compare):
                             for link in unique_links:
                                 if link.is_displayed() and link.is_enabled():
                                     link.click()
+                                    print("clicked on :", link.accessible_name)
                                 else:
                                     print("Element is not interactable:", link.text)
 
                                 time.sleep(2)
 
                                 last_downloaded_file = get_last_downloaded_file(download_path)
+                                print("Downloaded: ", last_downloaded_file)
 
                                 try:
                                     add_orario_into_file_name(download_path, orario_value, last_downloaded_file)
@@ -343,7 +344,7 @@ def scrap(date_to_compare):
                 traceback.print_exc()
 
         if obj_date == date_to_compare:
-            print("eftasa!")
+            print("DB Date == Site Date!", obj_date)
             # breaks to driver.quit
             break
 

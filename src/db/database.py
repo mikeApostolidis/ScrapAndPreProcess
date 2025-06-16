@@ -2,7 +2,7 @@
 
 import mysql.connector
 from datetime import date
-from ScrapAndPreProcess.src.db.config import DATABASE_CONFIG
+from src.db.config import DATABASE_CONFIG
 
 
 def connect_to_db():
@@ -47,8 +47,8 @@ def get_max_date():
 
     max_date = result[0][0] if result and result[0] and result[0][0] else None
 
-#just for test, remove when want to use normal flow
-    # max_date = date(2018, 1, 23)
+#just for test, remove when want to use with real DB
+    # max_date = date(2024, 10, 14)
 
     cursor.close()
     connection.close()
