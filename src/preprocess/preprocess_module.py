@@ -32,7 +32,7 @@ def remove_all_files(path, zip_path, outputDir):
     for filename in os.listdir(outputDir):
         if filename.endswith(".csv"):
             # Construct the full path of the file
-            file_path = os.path.join(zip_path, filename)
+            file_path = os.path.join(outputDir, filename)
             try:
                 # Remove the file
                 os.remove(file_path)
